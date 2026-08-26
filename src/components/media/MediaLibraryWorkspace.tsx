@@ -131,7 +131,7 @@ export const MediaLibraryWorkspace: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 h-[calc(100vh-3.5rem)] flex flex-col bg-[#0B0D11] overflow-y-auto p-8 space-y-6">
+    <div className="flex-1 h-[calc(100vh-3.5rem)] flex flex-col bg-[#0B0D11] overflow-y-auto p-4 sm:p-8 space-y-5 sm:space-y-6 pb-20 md:pb-8">
       {/* Top Header Controls */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>

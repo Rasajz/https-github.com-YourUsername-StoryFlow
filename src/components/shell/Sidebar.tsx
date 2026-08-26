@@ -8,11 +8,11 @@ import {
   Film, 
   Image as ImageIcon, 
   Search, 
-  Settings, 
   ChevronDown, 
   Sparkles,
   Cloud,
-  CheckCircle2
+  CheckCircle2,
+  FolderKanban
 } from 'lucide-react';
 import { useStory } from '../../context/StoryContext';
 import { WorkspaceView } from '../../types';
@@ -40,137 +40,162 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 h-screen bg-[#11141B] border-r border-white/5 flex flex-col justify-between shrink-0 select-none transition-all duration-200 z-30">
-      {/* Top Header */}
-      <div>
-        <div className="p-4 border-b border-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
-              <Clapperboard className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-bold text-white tracking-wide text-base flex items-center gap-1.5">
-                StoryFlow
-                <Sparkles className="w-3.5 h-3.5 text-amber-400 inline" />
-              </h1>
-              <p className="text-[11px] text-gray-400 font-medium">Visual Creator Workspace</p>
+    <>
+      {/* DESKTOP SIDEBAR (Visible on md screens and up) */}
+      <aside className="hidden md:flex w-64 h-screen bg-[#11141B] border-r border-white/5 flex-col justify-between shrink-0 select-none transition-all duration-200 z-30">
+        {/* Top Header */}
+        <div>
+          <div className="p-4 border-b border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                <Clapperboard className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="font-bold text-white tracking-wide text-base flex items-center gap-1.5">
+                  StoryFlow
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 inline" />
+                </h1>
+                <p className="text-[11px] text-gray-400 font-medium">Visual Creator Workspace</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Project Selector */}
-        <div className="p-3">
-          <button 
-            type="button"
-            onClick={() => setIsProjectModalOpen(true)}
-            className="w-full flex items-center justify-between p-2.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-amber-500/30 transition-all text-left group cursor-pointer shadow-sm"
-            title="Click to switch or create story projects"
-          >
-            <div className="truncate">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Active Project</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 font-mono">
-                  {projects.length}
+          {/* Project Selector */}
+          <div className="p-3">
+            <button 
+              type="button"
+              onClick={() => setIsProjectModalOpen(true)}
+              className="w-full flex items-center justify-between p-2.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-amber-500/30 transition-all text-left group cursor-pointer shadow-sm"
+              title="Click to switch or create story projects"
+            >
+              <div className="truncate">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Active Project</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 font-mono">
+                    {projects.length}
+                  </span>
+                </div>
+                <span className="block text-sm font-semibold text-gray-200 group-hover:text-amber-400 transition-colors truncate mt-0.5">
+                  {projectName}
                 </span>
               </div>
-              <span className="block text-sm font-semibold text-gray-200 group-hover:text-amber-400 transition-colors truncate mt-0.5">
-                {projectName}
-              </span>
-            </div>
-            <ChevronDown className="w-4 h-4 text-gray-500 group-hover:text-amber-400 transition-colors shrink-0" />
-          </button>
+              <ChevronDown className="w-4 h-4 text-gray-500 group-hover:text-amber-400 transition-colors shrink-0" />
+            </button>
+          </div>
+
+          {/* Navigation Items */}
+          <nav className="p-2 space-y-1 mt-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeView === item.id;
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  onClick={() => setActiveView(item.id)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium text-sm transition-all duration-150 group ${
+                    isActive
+                      ? 'bg-amber-500/10 text-amber-400 border-l-2 border-amber-500 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-amber-400' : 'text-gray-500 group-hover:text-gray-300'}`} />
+                    <span>{item.label}</span>
+                  </div>
+                  <span className="text-[10px] text-gray-600 font-mono uppercase tracking-wider">
+                    {item.id === 'notes' ? 'N' : item.id === 'storyboard' ? 'S' : ''}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="p-2 space-y-1 mt-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeView === item.id;
-            return (
-              <button
-                type="button"
-                key={item.id}
-                onClick={() => setActiveView(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-medium text-sm transition-all duration-150 group ${
-                  isActive
-                    ? 'bg-amber-500/10 text-amber-400 border-l-2 border-amber-500 shadow-sm'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${isActive ? 'text-amber-400' : 'text-gray-400'}`} />
-                  <span>{item.label}</span>
-                </div>
-                {item.id === 'notes' && <span className="text-[10px] text-gray-500 font-mono">N</span>}
-                {item.id === 'storyboard' && <span className="text-[10px] text-gray-500 font-mono">S</span>}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+        {/* Bottom Actions */}
+        <div className="p-3 border-t border-white/5 space-y-2">
+          {/* Quick Search Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsCommandPaletteOpen(true)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] text-gray-400 hover:text-gray-200 text-xs transition-colors border border-white/5"
+          >
+            <div className="flex items-center gap-2">
+              <Search className="w-3.5 h-3.5 text-gray-500" />
+              <span>Quick Search</span>
+            </div>
+            <kbd className="text-[10px] font-mono text-gray-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+              Ctrl+K
+            </kbd>
+          </button>
 
-      {/* Bottom Area */}
-      <div className="p-3 border-t border-white/5 space-y-1">
-        <button 
-          type="button"
-          onClick={() => setIsCommandPaletteOpen(true)}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-white/[0.04] transition-all"
-        >
-          <div className="flex items-center gap-2.5">
-            <Search className="w-3.5 h-3.5 text-gray-400" />
-            <span>Quick Search</span>
-          </div>
-          <kbd className="px-1.5 py-0.5 rounded text-[10px] bg-white/10 text-gray-400 font-mono">Ctrl+K</kbd>
-        </button>
+          {/* Google Sync Button */}
+          <button
+            type="button"
+            onClick={() => setIsGoogleModalOpen(true)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] text-gray-400 hover:text-gray-200 text-xs transition-colors border border-white/5"
+          >
+            <div className="flex items-center gap-2">
+              <Cloud className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Cloud Backup & Restore</span>
+            </div>
+            <span className="w-2 h-2 rounded-full bg-emerald-400" title="Connected" />
+          </button>
 
-        <button 
-          type="button"
-          onClick={() => setIsGoogleModalOpen(true)}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-amber-400 hover:bg-white/[0.04] transition-all group"
-        >
-          <div className="flex items-center gap-2.5">
-            <Cloud className="w-3.5 h-3.5 text-gray-400 group-hover:text-amber-400" />
-            <span>Cloud Backup & Restore</span>
-          </div>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        </button>
-
-        {/* User Profile / Gmail Sign In Button */}
-        <button
-          type="button"
-          onClick={() => setIsGoogleModalOpen(true)}
-          className="w-full pt-2 mt-2 border-t border-white/5 flex items-center justify-between p-2 rounded-xl hover:bg-white/[0.05] transition-all text-left group"
-          title="Click to manage Google / Gmail cloud backup and restore"
-        >
-          <div className="flex items-center gap-3 truncate">
-            {googleUser ? (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-amber-500/30 shrink-0 shadow">
-                {googleUser.name.charAt(0).toUpperCase()}
-              </div>
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-400 text-xs font-bold ring-2 ring-white/10 shrink-0">
-                G
-              </div>
-            )}
-            <div className="truncate">
-              <span className="block text-xs font-semibold text-gray-200 group-hover:text-amber-400 transition-colors truncate">
-                {googleUser ? googleUser.name : 'Sign in with Gmail'}
+          {/* User Profile */}
+          <button
+            type="button"
+            onClick={() => setIsGoogleModalOpen(true)}
+            className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer text-left"
+          >
+            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center font-bold text-xs text-white">
+              {googleUser ? googleUser.name.charAt(0) : 'S'}
+            </div>
+            <div className="truncate flex-1">
+              <span className="block text-xs font-semibold text-gray-200 truncate">
+                {googleUser ? googleUser.name : 'Storyflow Creator'}
               </span>
               <span className="block text-[10px] text-gray-500 truncate flex items-center gap-1">
-                {googleUser ? (
-                  <>
-                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 inline" />
-                    <span>{googleUser.email}</span>
-                  </>
-                ) : (
-                  'Enable cloud backup'
-                )}
+                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 inline" />
+                {googleUser ? googleUser.email : 'creator.storyflow@gmail.com'}
               </span>
             </div>
-          </div>
-          <Settings className="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-300 shrink-0" />
+          </button>
+        </div>
+      </aside>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR (Visible on mobile screens) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#11141B]/95 backdrop-blur-xl border-t border-white/10 h-16 px-2 flex items-center justify-around shadow-2xl safe-area-bottom">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeView === item.id;
+          return (
+            <button
+              type="button"
+              key={item.id}
+              onClick={() => setActiveView(item.id)}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
+                isActive
+                  ? 'text-amber-400 scale-105 font-bold'
+                  : 'text-gray-400 hover:text-gray-200 font-medium'
+              }`}
+            >
+              <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-amber-400' : 'text-gray-400'}`} />
+              <span className="text-[10px] whitespace-nowrap">{item.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Mobile Project Switcher Trigger */}
+        <button
+          type="button"
+          onClick={() => setIsProjectModalOpen(true)}
+          className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-400 hover:text-amber-400 transition-all"
+        >
+          <FolderKanban className="w-5 h-5 mb-0.5 text-amber-400/80" />
+          <span className="text-[10px] text-amber-400/90 whitespace-nowrap">Projects</span>
         </button>
-      </div>
-    </aside>
+      </nav>
+    </>
   );
 };

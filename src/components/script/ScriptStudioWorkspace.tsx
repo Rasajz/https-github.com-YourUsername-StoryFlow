@@ -18,7 +18,8 @@ import {
   User,
   Camera,
   Trash2,
-  GitBranch
+  GitBranch,
+  ArrowLeft
 } from 'lucide-react';
 import { useStory } from '../../context/StoryContext';
 import { ScreenplayBlockType, ScreenplayBlock } from '../../types';
@@ -43,6 +44,9 @@ export const ScriptStudioWorkspace: React.FC = () => {
   const [showRefPanel, setShowRefPanel] = useState(true);
   const [scriptTheme, setScriptTheme] = useState<'paper' | 'dark'>('paper');
   const [newShotText, setNewShotText] = useState('');
+
+  // Mobile active tab view ('script' | 'scenes' | 'references')
+  const [mobileTab, setMobileTab] = useState<'script' | 'scenes' | 'references'>('script');
 
   const activeScene = scriptScenes.find((s) => s.id === activeSceneId) || scriptScenes[0];
 
@@ -84,10 +88,6 @@ export const ScriptStudioWorkspace: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent, block: ScreenplayBlock) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      // Intelligent typing flow rules:
-      // Character -> Dialogue
-      // Dialogue -> Action
-      // Heading -> Action
       let nextType: ScreenplayBlockType = 'action';
       if (block.type === 'character') nextType = 'dialogue';
       if (block.type === 'dialogue') nextType = 'action';
@@ -130,7 +130,6 @@ export const ScriptStudioWorkspace: React.FC = () => {
   };
 
   const handleExportFormattedScript = () => {
-    // Generate formatted screenplay text file
     let exportContent = `STORYFLOW SCREENPLAY EXPORT\n====================================\n\n`;
     scriptScenes.forEach((scene) => {
       exportContent += `SCENE ${scene.number}: ${scene.title}\n`;
@@ -160,6 +159,11 @@ export const ScriptStudioWorkspace: React.FC = () => {
     showToast('Screenplay Exported', 'Downloaded formatted screenplay .txt file');
   };
 
+  const handleSelectSceneMobile = (id: string) => {
+    setActiveSceneId(id);
+    setMobileTab('script');
+  };
+
   const cameraPresets = [
     'Close-Up (CU)',
     'Wide Establishing (WS)',
@@ -170,10 +174,45 @@ export const ScriptStudioWorkspace: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 h-[calc(100vh-3.5rem)] flex bg-[#0B0D11] overflow-hidden">
-      {/* Left Scene Navigator (~280px) */}
+    <div className="flex-1 h-[calc(100vh-3.5rem)] flex flex-col md:flex-row bg-[#0B0D11] overflow-hidden pb-16 md:pb-0">
+      {/* MOBILE TOP TAB SWITCHER (Visible on mobile only) */}
+      <div className="md:hidden flex items-center justify-around bg-[#14171F] border-b border-white/5 p-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => setMobileTab('script')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            mobileTab === 'script' ? 'bg-amber-500 text-black shadow' : 'text-gray-400'
+          }`}
+        >
+          <Film className="w-3.5 h-3.5" />
+          <span>Screenplay</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('scenes')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            mobileTab === 'scenes' ? 'bg-amber-500 text-black shadow' : 'text-gray-400'
+          }`}
+        >
+          <span>Scenes ({scriptScenes.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('references')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            mobileTab === 'references' ? 'bg-amber-500 text-black shadow' : 'text-gray-400'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <span>References</span>
+        </button>
+      </div>
+
+      {/* 1. Left Scene Navigator */}
       {!focusMode && (
-        <div className="w-72 bg-[#12151D] border-r border-white/5 flex flex-col shrink-0">
+        <div className={`w-full md:w-72 bg-[#12151D] border-r border-white/5 flex flex-col shrink-0 ${
+          mobileTab === 'scenes' ? 'flex' : 'hidden md:flex'
+        }`}>
           {/* Top Scene Controls */}
           <div className="p-3 space-y-2 border-b border-white/5">
             <div className="flex items-center justify-between">
@@ -183,7 +222,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
               </h2>
               <button
                 type="button"
-                onClick={() => addScriptScene()}
+                onClick={() => { addScriptScene(); setMobileTab('script'); }}
                 className="p-1 rounded bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 transition-all flex items-center gap-1 text-xs px-2 font-medium"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -214,7 +253,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
                     : 'bg-white/[0.04] text-gray-400 hover:text-white'
                 }`}
               >
-                All Timelines
+                All
               </button>
               {timelines.map((tl) => (
                 <button
@@ -242,7 +281,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
               return (
                 <div
                   key={scene.id}
-                  onClick={() => setActiveSceneId(scene.id)}
+                  onClick={() => handleSelectSceneMobile(scene.id)}
                   className={`p-2.5 rounded-xl cursor-pointer transition-all duration-150 border group ${
                     isActive
                       ? 'bg-orange-500/10 border-orange-500/30 text-white shadow-sm'
@@ -302,37 +341,39 @@ export const ScriptStudioWorkspace: React.FC = () => {
         </div>
       )}
 
-      {/* Center Screenplay Editor */}
-      <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#0B0D11]">
+      {/* 2. Center Screenplay Editor */}
+      <div className={`flex-1 flex-col h-full overflow-y-auto bg-[#0B0D11] ${
+        mobileTab === 'script' ? 'flex' : 'hidden md:flex'
+      }`}>
         {/* Editor Sub-Header Toolbar */}
-        <div className="h-12 bg-[#14171F] border-b border-white/5 px-6 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 font-medium">Script View:</span>
-            <span className="text-xs font-bold text-white uppercase tracking-wider">
-              {activeScene ? activeScene.title : 'Screenplay Scene'}
+        <div className="h-12 bg-[#14171F] border-b border-white/5 px-3 sm:px-6 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 truncate max-w-[50vw]">
+            <span className="text-xs text-gray-400 font-medium hidden sm:inline">Script:</span>
+            <span className="text-xs font-bold text-white uppercase tracking-wider truncate">
+              {activeScene ? activeScene.title : 'Scene'}
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Paper Theme Switcher */}
-            <div className="flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/5 text-[11px]">
+            <div className="flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/5 text-[10px] sm:text-[11px]">
               <button
                 type="button"
                 onClick={() => setScriptTheme('paper')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
+                className={`px-2 py-0.5 rounded font-semibold transition-all ${
                   scriptTheme === 'paper' ? 'bg-amber-500 text-black shadow' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                Paper Cream
+                Paper
               </button>
               <button
                 type="button"
                 onClick={() => setScriptTheme('dark')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
+                className={`px-2 py-0.5 rounded font-semibold transition-all ${
                   scriptTheme === 'dark' ? 'bg-amber-500 text-black shadow' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                Dark Matte
+                Dark
               </button>
             </div>
 
@@ -340,41 +381,41 @@ export const ScriptStudioWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={handleExportFormattedScript}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-gray-200 hover:text-white border border-white/10 text-xs font-semibold transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-gray-200 hover:text-white border border-white/10 text-xs font-semibold transition-all shrink-0"
             >
               <Download className="w-3.5 h-3.5 text-amber-400" />
-              <span>Export Script (.txt)</span>
+              <span className="hidden sm:inline">Export (.txt)</span>
             </button>
           </div>
         </div>
 
         {/* Formatted Screenplay Page Container */}
         {activeScene ? (
-          <div className="py-8 px-4 w-full flex justify-center flex-1">
-            <div className={`w-full max-w-3xl rounded-xl p-12 min-h-[750px] transition-all ${
+          <div className="py-4 sm:py-8 px-2 sm:px-4 w-full flex justify-center flex-1">
+            <div className={`w-full max-w-3xl rounded-xl p-5 sm:p-12 min-h-[600px] transition-all ${
               scriptTheme === 'paper' ? 'screenplay-paper' : 'screenplay-dark-paper'
             }`}>
               {/* Scene Title Header */}
-              <div className="mb-6 border-b pb-3 border-black/10 flex items-center justify-between">
+              <div className="mb-4 sm:mb-6 border-b pb-2 sm:pb-3 border-black/10 flex items-center justify-between">
                 <input
                   type="text"
                   value={activeScene.title}
                   onChange={(e) => updateScriptScene(activeScene.id, { title: e.target.value })}
-                  className="text-lg font-bold tracking-wider uppercase bg-transparent focus:outline-none w-full font-mono"
+                  className="text-base sm:text-lg font-bold tracking-wider uppercase bg-transparent focus:outline-none w-full font-mono"
                 />
               </div>
 
               {/* Screenplay Content Blocks */}
-              <div className="space-y-3 font-mono text-sm leading-relaxed">
+              <div className="space-y-3 font-mono text-xs sm:text-sm leading-relaxed">
                 {activeScene.blocks.map((block) => {
                   return (
-                    <div key={block.id} className="relative group flex items-start">
-                      {/* Block Type Switcher Toolbar (Visible on Hover) */}
-                      <div className="absolute -left-16 top-1 opacity-0 group-hover:opacity-100 flex items-center gap-1 bg-[#14171F] border border-white/10 p-1 rounded-md shadow-lg z-20 text-[10px]">
+                    <div key={block.id} className="relative group flex flex-col sm:flex-row items-start gap-1">
+                      {/* Block Type Switcher Toolbar */}
+                      <div className="flex sm:absolute sm:-left-16 sm:top-1 sm:opacity-0 sm:group-hover:opacity-100 items-center gap-1 bg-[#14171F] border border-white/10 p-1 rounded-md shadow-lg z-20 text-[10px]">
                         <select
                           value={block.type}
                           onChange={(e) => handleBlockTypeChange(block.id, e.target.value as ScreenplayBlockType)}
-                          className="bg-transparent text-gray-300 focus:outline-none cursor-pointer"
+                          className="bg-transparent text-gray-300 focus:outline-none cursor-pointer text-[10px]"
                         >
                           <option value="heading">Heading</option>
                           <option value="action">Action</option>
@@ -392,7 +433,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
                         </button>
                       </div>
 
-                      {/* Screenplay Block Input with Industry Standard Format Alignments */}
+                      {/* Screenplay Block Input */}
                       <div className="w-full">
                         {block.type === 'heading' && (
                           <input
@@ -424,7 +465,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
                               onChange={(e) => handleBlockChange(block.id, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, block)}
                               placeholder="CHARACTER NAME"
-                              className="font-bold uppercase tracking-wider text-center bg-transparent focus:outline-none w-1/2 mx-auto"
+                              className="font-bold uppercase tracking-wider text-center bg-transparent focus:outline-none w-full sm:w-1/2 mx-auto"
                             />
                           </div>
                         )}
@@ -437,13 +478,13 @@ export const ScriptStudioWorkspace: React.FC = () => {
                               onChange={(e) => handleBlockChange(block.id, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, block)}
                               placeholder="(whispering)"
-                              className="italic text-center bg-transparent focus:outline-none w-1/3 mx-auto text-xs"
+                              className="italic text-center bg-transparent focus:outline-none w-full sm:w-1/3 mx-auto text-xs"
                             />
                           </div>
                         )}
 
                         {block.type === 'dialogue' && (
-                          <div className="w-3/4 mx-auto">
+                          <div className="w-full sm:w-3/4 mx-auto">
                             <textarea
                               rows={2}
                               value={block.text}
@@ -463,7 +504,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
                               onChange={(e) => handleBlockChange(block.id, e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, block)}
                               placeholder="CUT TO:"
-                              className="font-bold uppercase tracking-wider text-right bg-transparent focus:outline-none w-1/3 ml-auto"
+                              className="font-bold uppercase tracking-wider text-right bg-transparent focus:outline-none w-full sm:w-1/3 ml-auto"
                             />
                           </div>
                         )}
@@ -477,18 +518,30 @@ export const ScriptStudioWorkspace: React.FC = () => {
         ) : null}
       </div>
 
-      {/* Right Scene References Panel (~300px) */}
+      {/* 3. Right Scene References Panel */}
       {!focusMode && (
-        <div className="w-80 bg-[#12151D] border-l border-white/5 flex flex-col shrink-0 overflow-y-auto">
+        <div className={`w-full md:w-80 bg-[#12151D] border-l border-white/5 flex-col shrink-0 overflow-y-auto ${
+          mobileTab === 'references' ? 'flex' : 'hidden md:flex'
+        }`}>
           <div className="p-4 border-b border-white/5 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setMobileTab('script')}
+              className="md:hidden flex items-center gap-1 text-xs text-amber-400 font-semibold"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Script</span>
+            </button>
+
             <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400 flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>Scene References</span>
             </h3>
+
             <button
               type="button"
               onClick={() => setShowRefPanel(!showRefPanel)}
-              className="p-1 text-gray-500 hover:text-white"
+              className="p-1 text-gray-500 hover:text-white hidden md:block"
             >
               {showRefPanel ? <SidebarClose className="w-4 h-4" /> : <SidebarOpen className="w-4 h-4" />}
             </button>
@@ -524,7 +577,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
                     className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 cursor-pointer hover:bg-amber-500/15 transition-all group"
                   >
                     <div className="flex items-center justify-between text-amber-400 font-bold mb-1">
-                      <span>Scene 1 Card</span>
+                      <span>Linked Card</span>
                       <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                     <p className="text-[11px] text-gray-400 line-clamp-2">Visual story node on canvas.</p>
@@ -561,7 +614,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
                   <div className="rounded-lg overflow-hidden border border-white/10 h-32 relative">
                     <Image src={activeScene.moodImage} alt="Mood" fill className="object-cover" unoptimized />
                     <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md text-[9px] text-gray-200">
-                      Blue neon rain reference
+                      Visual reference
                     </div>
                   </div>
                 </div>
@@ -575,7 +628,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
                 </p>
               </div>
 
-              {/* Shot Ideas List with Delete and Quick Presets */}
+              {/* Shot Ideas List */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-gray-400 uppercase tracking-wider text-[10px] flex items-center gap-1">
@@ -598,7 +651,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleDeleteShotIdea(idx)}
-                        className="p-1 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        className="p-1 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors shrink-0"
                         title="Delete this camera shot angle"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -628,7 +681,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
                 <div className="flex items-center gap-1 pt-1">
                   <input
                     type="text"
-                    placeholder="Custom camera shot angle..."
+                    placeholder="Custom camera angle..."
                     value={newShotText}
                     onChange={(e) => setNewShotText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleAddShotIdea(); }}

@@ -35,7 +35,7 @@ export const InspectorPanel: React.FC = () => {
   const data = selectedNode.data;
 
   return (
-    <aside className="w-80 h-[calc(100vh-3.5rem)] bg-[#12151D] border-l border-white/5 flex flex-col justify-between shrink-0 z-20 shadow-2xl animate-in slide-in-from-right duration-200">
+    <aside className="w-full md:w-80 fixed md:relative bottom-16 md:bottom-auto left-0 md:left-auto right-0 max-h-[70vh] md:max-h-none md:h-[calc(100vh-3.5rem)] bg-[#12151D] border-t md:border-t-0 md:border-l border-white/10 md:border-white/5 flex flex-col justify-between shrink-0 z-40 shadow-2xl rounded-t-2xl md:rounded-none animate-in slide-in-from-bottom md:slide-in-from-right duration-200">
       {/* Panel Header */}
       <div className="p-4 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-2">

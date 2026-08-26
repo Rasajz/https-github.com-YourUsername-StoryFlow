@@ -338,14 +338,14 @@ export const StoryboardCanvas: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 h-[calc(100vh-3.5rem)] flex bg-[#0B0D11] relative overflow-hidden" ref={flowRef}>
+    <div className="flex-1 h-[calc(100vh-3.5rem)] flex bg-[#0B0D11] relative overflow-hidden pb-16 md:pb-0" ref={flowRef}>
       {/* Top Toolbar & Timeline Tracks Bar */}
-      <div className="absolute top-4 left-6 z-10 flex items-center gap-3 flex-wrap max-w-[85vw]">
+      <div className="absolute top-2 left-2 sm:top-4 sm:left-6 z-10 flex items-center gap-2 sm:gap-3 flex-wrap max-w-[95vw] sm:max-w-[85vw]">
         {/* Main Board Badge & Add Button */}
-        <div className="flex items-center gap-2.5 bg-[#14171F]/90 backdrop-blur-md border border-white/10 p-2 rounded-xl shadow-2xl">
-          <div className="flex items-center gap-2 px-2 border-r border-white/10">
-            <LayoutGrid className="w-4 h-4 text-amber-400" />
-            <span className="font-bold text-xs text-white">{currentBoardTitle}</span>
+        <div className="flex items-center gap-1.5 sm:gap-2.5 bg-[#14171F]/90 backdrop-blur-md border border-white/10 p-1.5 sm:p-2 rounded-xl shadow-2xl">
+          <div className="flex items-center gap-1.5 px-1.5 sm:px-2 border-r border-white/10">
+            <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+            <span className="font-bold text-xs text-white truncate max-w-[100px] sm:max-w-none">{currentBoardTitle}</span>
           </div>
 
           {/* Quick Add Button */}
@@ -353,7 +353,7 @@ export const StoryboardCanvas: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowAddMenu(!showAddMenu)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all active:scale-95"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all active:scale-95"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>Add Card</span>
@@ -388,22 +388,22 @@ export const StoryboardCanvas: React.FC = () => {
         </div>
 
         {/* Storyline Timeline Tracks Bar */}
-        <div className="flex items-center gap-1.5 bg-[#14171F]/90 backdrop-blur-md border border-white/10 p-1.5 rounded-xl shadow-2xl overflow-x-auto scrollbar-none">
-          <div className="flex items-center gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-wider px-2 border-r border-white/10">
+        <div className="flex items-center gap-1 sm:gap-1.5 bg-[#14171F]/90 backdrop-blur-md border border-white/10 p-1 sm:p-1.5 rounded-xl shadow-2xl overflow-x-auto scrollbar-none max-w-[90vw] sm:max-w-none">
+          <div className="flex items-center gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-wider px-1.5 sm:px-2 border-r border-white/10">
             <GitBranch className="w-3.5 h-3.5 text-amber-400" />
-            <span>Timelines</span>
+            <span className="hidden sm:inline">Timelines</span>
           </div>
 
           <button
             type="button"
             onClick={() => setActiveTimelineId('all')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+            className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
               activeTimelineId === 'all'
                 ? 'bg-amber-500 text-black shadow'
                 : 'bg-white/[0.04] text-gray-400 hover:text-white'
             }`}
           >
-            All Tracks ({nodes.length})
+            All ({nodes.length})
           </button>
 
           {timelines.map((tl) => (
@@ -411,7 +411,7 @@ export const StoryboardCanvas: React.FC = () => {
               type="button"
               key={tl.id}
               onClick={() => setActiveTimelineId(tl.id)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 sm:gap-1.5 ${
                 activeTimelineId === tl.id
                   ? 'bg-white/20 text-white border border-white/30 shadow'
                   : 'bg-white/[0.04] text-gray-400 hover:text-white'
@@ -429,13 +429,13 @@ export const StoryboardCanvas: React.FC = () => {
             title="Create new narrative timeline track"
           >
             <Plus className="w-3 h-3" />
-            <span>New Track</span>
+            <span className="hidden sm:inline">New Track</span>
           </button>
         </div>
       </div>
 
       {/* Right Hint Badge */}
-      <div className="absolute top-4 right-6 z-10 bg-[#14171F]/80 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-2">
+      <div className="hidden lg:flex absolute top-4 right-6 z-10 bg-[#14171F]/80 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-xl shadow-lg items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
         <span className="text-[11px] text-gray-300 font-medium">Right-click cards for quick actions & shortcuts</span>
       </div>
