@@ -174,7 +174,7 @@ export const ScriptStudioWorkspace: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 h-[calc(100vh-3.5rem)] flex flex-col md:flex-row bg-[#0B0D11] overflow-hidden pb-16 md:pb-0">
+    <div className="flex-1 h-full flex flex-col md:flex-row bg-[#0B0D11] overflow-hidden pb-16 md:pb-0">
       {/* MOBILE TOP TAB SWITCHER (Visible on mobile only) */}
       <div className="md:hidden flex items-center justify-around bg-[#14171F] border-b border-white/5 p-2 shrink-0">
         <button

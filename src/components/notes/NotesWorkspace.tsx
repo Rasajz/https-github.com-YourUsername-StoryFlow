@@ -140,7 +140,7 @@ export const NotesWorkspace: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 h-[calc(100vh-3.5rem)] md:h-[calc(100vh-3.5rem)] flex bg-[#0B0D11] overflow-hidden relative pb-16 md:pb-0">
+    <div className="flex-1 h-full flex bg-[#0B0D11] overflow-hidden relative pb-16 md:pb-0">
       {/* 1. Left Note List */}
       <div className={`w-full md:w-72 bg-[#12151D] border-r border-white/5 flex flex-col shrink-0 ${
         mobileView === 'list' ? 'flex' : 'hidden md:flex'

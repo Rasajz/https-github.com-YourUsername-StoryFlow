@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { StoryProvider } from "../context/StoryContext";
@@ -20,6 +20,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "StoryFlow - Visual Workspace for Filmmakers & Storytellers",
   description: "Go from random ideas to visual story planning to professional screenplay writing.",
+  icons: {
+    icon: "/favicon.ico",
+  }
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#0B0D11"
 };
 
 export default function RootLayout({
@@ -32,7 +44,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-[#0B0D11] text-gray-100 font-sans selection:bg-amber-500/30 selection:text-white">
+      <body className="min-h-full flex flex-col bg-[#0B0D11] text-gray-100 font-sans selection:bg-amber-500/30 selection:text-white overscroll-none touch-manipulation">
         <StoryProvider>
           {children}
           <ToastNotification />

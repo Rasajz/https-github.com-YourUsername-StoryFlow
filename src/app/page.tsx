@@ -13,20 +13,22 @@ export default function Home() {
   const { activeView } = useStory();
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0B0D11]">
-      {/* Persistent Left Sidebar */}
+    <div className="flex h-[100dvh] w-screen overflow-hidden bg-[#0B0D11] relative">
+      {/* Persistent Left Sidebar (Desktop only) */}
       <Sidebar />
 
       {/* Main Workspace Area */}
-      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden relative">
+      <main className="flex-1 flex flex-col h-[100dvh] min-w-0 overflow-hidden relative">
         <TopBar />
 
-        {/* View Switcher */}
-        {activeView === 'notes' && <NotesWorkspace />}
-        {activeView === 'storyboard' && <StoryboardCanvas />}
-        {activeView === 'script' && <ScriptStudioWorkspace />}
-        {activeView === 'media' && <MediaLibraryWorkspace />}
-      </div>
+        {/* View Switcher Container */}
+        <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
+          {activeView === 'notes' && <NotesWorkspace />}
+          {activeView === 'storyboard' && <StoryboardCanvas />}
+          {activeView === 'script' && <ScriptStudioWorkspace />}
+          {activeView === 'media' && <MediaLibraryWorkspace />}
+        </div>
+      </main>
     </div>
   );
 }

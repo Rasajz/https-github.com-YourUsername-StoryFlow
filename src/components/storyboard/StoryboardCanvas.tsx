@@ -338,7 +338,7 @@ export const StoryboardCanvas: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 h-[calc(100vh-3.5rem)] flex bg-[#0B0D11] relative overflow-hidden pb-16 md:pb-0" ref={flowRef}>
+    <div className="flex-1 h-full flex bg-[#0B0D11] relative overflow-hidden pb-16 md:pb-0" ref={flowRef}>
       {/* Top Toolbar & Timeline Tracks Bar */}
       <div className="absolute top-2 left-2 sm:top-4 sm:left-6 z-10 flex items-center gap-2 sm:gap-3 flex-wrap max-w-[95vw] sm:max-w-[85vw]">
         {/* Main Board Badge & Add Button */}
