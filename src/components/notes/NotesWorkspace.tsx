@@ -104,7 +104,7 @@ export const NotesWorkspace: React.FC = () => {
         editor.commands.setContent(activeNote.content);
       }
     }
-  }, [activeNoteId, editor]);
+  }, [activeNoteId, activeNote, editor]);
 
   const tagsList: NoteTag[] = ['All', 'Ideas', 'Characters', 'Dialogue', 'References', 'Locations'];
 

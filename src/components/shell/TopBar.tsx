@@ -8,7 +8,6 @@ import {
   Maximize2, 
   Minimize2,
   Cloud,
-  FolderKanban,
   Clapperboard
 } from 'lucide-react';
 import { useStory } from '../../context/StoryContext';
