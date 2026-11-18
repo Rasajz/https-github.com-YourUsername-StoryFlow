@@ -194,12 +194,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeTimelineId, setActiveTimelineId] = useState<string>('all');
 
   // Google Account & Cloud Sync state
-  const [googleUser, setGoogleUser] = useState<GoogleUser | null>({
-    name: 'Storyflow Creator',
-    email: 'creator.storyflow@gmail.com',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
-    lastBackupTime: 'Just now'
-  });
+  const [googleUser, setGoogleUser] = useState<GoogleUser | null>(null);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState<boolean>(false);
 
   // System state
