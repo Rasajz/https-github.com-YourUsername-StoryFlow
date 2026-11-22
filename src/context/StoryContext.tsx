@@ -835,7 +835,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       connectedSceneOrBoard: item.connectedSceneOrBoard || 'Main Story Map',
       createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     };
-    setMediaItems([newMedia, ...mediaItems]);
+    setMediaItems((prev) => [newMedia, ...prev]);
     triggerAutosave();
     showToast('Media Uploaded', `Added "${newMedia.title}" to Media Library`);
   };

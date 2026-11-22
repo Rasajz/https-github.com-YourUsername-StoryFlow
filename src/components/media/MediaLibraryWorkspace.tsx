@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import Image from 'next/image';
+import { ArtworkPreview } from './ArtworkPreview';
+import { isLocalImage, saveLocalImage } from '../../lib/localImageStorage';
 import { 
   Image as ImageIcon, 
   Music, 
@@ -15,13 +16,15 @@ import {
   Copy, 
   Check,
   Video,
-  Camera
+  Camera,
+  Upload,
+  Clapperboard
 } from 'lucide-react';
 import { useStory } from '../../context/StoryContext';
 import { MediaHelpModal } from '../modals/MediaHelpModal';
 
 export const MediaLibraryWorkspace: React.FC = () => {
-  const { mediaItems, addMediaItem, scriptScenes, nodes, projectName, showToast } = useStory();
+  const { mediaItems, addMediaItem, scriptScenes, nodes, projectName, showToast, addNodeToCanvas, setActiveView } = useStory();
 
   const [filterType, setFilterType] = useState<string>('All');
   const [search, setSearch] = useState<string>('');
@@ -33,6 +36,9 @@ export const MediaLibraryWorkspace: React.FC = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [newType, setNewType] = useState<'image' | 'video' | 'sketch' | 'audio'>('image');
+  const [chosenFiles, setChosenFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   // Aggregate all live links & references from script scenes and storyboard cards
   const scriptAndCardLinks = useMemo(() => {
@@ -75,7 +81,7 @@ export const MediaLibraryWorkspace: React.FC = () => {
           details: d.creatorNotes || 'Motion & cinematography reference'
         });
       }
-      if (d.imageUrl) {
+      if (d.imageUrl && !isLocalImage(d.imageUrl)) {
         links.push({
           id: `link-node-img-${n.id}`,
           title: d.title || 'Image Reference',
@@ -91,26 +97,87 @@ export const MediaLibraryWorkspace: React.FC = () => {
   }, [scriptScenes, nodes]);
 
   const filteredItems = mediaItems.filter((item) => {
-    const matchesFilter = filterType === 'All' || item.type === filterType.toLowerCase().slice(0, -1);
+    const typeMap: Record<string, string> = { Images: 'image', Sketches: 'sketch', Videos: 'video', Audios: 'audio' };
+    const matchesFilter = filterType === 'All' || item.type === typeMap[filterType];
     const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) ||
                           item.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
     return matchesFilter && matchesSearch;
   });
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    setUploadError('');
+    if (uploading) return;
+    if (showAddLinkModal) {
+      if (!newUrl.trim() || !newTitle.trim()) {
+        setUploadError('Give your reference a title and URL.');
+        return;
+      }
+      addMediaItem({
+        title: newTitle.trim(), url: newUrl.trim(),
+        type: newType, tags: ['Reference'],
+        connectedSceneOrBoard: 'Main Story Map'
+      });
+      setShowAddLinkModal(false);
+      setNewTitle('');
+      setNewUrl('');
+      return;
+    }
+    if (chosenFiles.length) {
+      setUploading(true);
+      let total = 0;
+      try {
+        for (const file of chosenFiles) {
+          const ref = await saveLocalImage(file);
+          addMediaItem({
+            title: chosenFiles.length === 1 && newTitle.trim()
+              ? newTitle.trim()
+              : file.name.replace(/\.[^.]+$/, '').slice(0, 120),
+            url: ref,
+            type: newType === 'sketch' ? 'sketch' : 'image',
+            tags: [newType === 'sketch' ? 'Painting / Sketch' : 'Photo / Storyboard', 'Original artwork'],
+            connectedSceneOrBoard: projectName
+          });
+          total++;
+        }
+        showToast('Artwork saved locally', total + ' image(s) added. Use Add to Storyboard to put them on your canvas.');
+        setShowUploadModal(false);
+        setChosenFiles([]);
+        setNewTitle('');
+        setNewUrl('');
+      } catch (err) {
+        setUploadError((err instanceof Error ? err.message : 'Upload failed.') +
+          (total ? ' ' + total + ' earlier image(s) were saved.' : ''));
+      } finally {
+        setUploading(false);
+      }
+      return;
+    }
+    // Preserve the ability to add a remote illustration URL too.
+    if (!newUrl.trim() || !newTitle.trim()) {
+      setUploadError('Choose images from your device, or enter an image URL and title.');
+      return;
+    }
     addMediaItem({
-      title: newTitle,
-      url: newUrl || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=800&auto=format&fit=crop',
-      type: newType,
-      tags: ['Reference'],
-      connectedSceneOrBoard: 'Main Story Map'
+      title: newTitle.trim(), url: newUrl.trim(),
+      type: newType, tags: ['Reference'], connectedSceneOrBoard: projectName
     });
     setShowUploadModal(false);
-    setShowAddLinkModal(false);
     setNewTitle('');
     setNewUrl('');
+  };
+
+  const addVisualToBoard = (item: { title: string; type: string; url: string }) => {
+    addNodeToCanvas({
+      nodeType: 'image',
+      title: item.title,
+      imageUrl: item.url,
+      description: item.type === 'sketch' ? 'Original storyboard sketch / artwork' : 'Original photo / visual reference',
+      accentColor: '#EC4899',
+      timelineId: 'time-main'
+    });
+    setActiveView('storyboard');
+    showToast('Visual added', 'You can resize, move, and connect this visual reference on your storyboard.');
   };
 
   const handleCopyLink = (url: string, index: number) => {
@@ -182,12 +249,23 @@ export const MediaLibraryWorkspace: React.FC = () => {
           {/* Upload Asset Button */}
           <button
             type="button"
-            onClick={() => setShowUploadModal(true)}
+            onClick={() => { setUploadError(''); setChosenFiles([]); setNewType('image'); setShowUploadModal(true); }}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold text-xs shadow-lg shadow-amber-500/20 hover:from-amber-400 hover:to-orange-400 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Upload Media Asset</span>
+            <span>Upload Photos / Sketches</span>
           </button>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+        <Upload className="h-5 w-5 shrink-0 text-amber-400" />
+        <div>
+          <h3 className="text-sm font-semibold text-amber-300">Bring your own visual storyboards</h3>
+          <p className="mt-1 text-xs leading-relaxed text-gray-300">
+            Upload photos of hand-drawn panels, paintings, concept art, or reference images.
+            Your originals stay on this device in its browser storage. Add any picture to your visual storyboard with one click.
+          </p>
         </div>
       </div>
 
@@ -337,12 +415,10 @@ export const MediaLibraryWorkspace: React.FC = () => {
                     <Music className="w-10 h-10 text-purple-400" />
                   </div>
                 ) : (
-                  <Image
-                    src={item.url}
+                  <ArtworkPreview
+                    source={item.url}
                     alt={item.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    unoptimized
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 )}
 
@@ -367,6 +443,16 @@ export const MediaLibraryWorkspace: React.FC = () => {
                   </div>
                 )}
 
+                {(item.type === 'image' || item.type === 'sketch') && (
+                  <button
+                    type="button"
+                    onClick={() => addVisualToBoard(item)}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/25"
+                  >
+                    <Clapperboard className="h-4 w-4" />
+                    Add to Storyboard
+                  </button>
+                )}
                 <div className="flex items-center gap-1 flex-wrap pt-1">
                   {item.tags.map((tag) => (
                     <span
@@ -461,76 +547,61 @@ export const MediaLibraryWorkspace: React.FC = () => {
         </div>
       )}
 
-      {/* Upload Media Asset Modal */}
+      {/* Real artwork file picker. Files remain in IndexedDB on this device. */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
-          <div className="w-full max-w-md bg-[#14171F] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-amber-400" />
-                <span>Upload Media Asset</span>
-              </h3>
-              <button 
-                type="button"
-                onClick={() => setShowUploadModal(false)}
-                className="p-1 text-gray-500 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#14171F] p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <h3 className="flex items-center gap-2 text-base font-bold text-white"><ImageIcon className="h-5 w-5 text-amber-400" /> Upload your artwork</h3>
+              <button type="button" onClick={() => setShowUploadModal(false)} aria-label="Close artwork upload" className="p-2 text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
             </div>
-
-            <form onSubmit={handleUploadSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300">Asset Title</label>
+            <form onSubmit={(e) => { void handleUploadSubmit(e); }} className="space-y-4">
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-amber-500/30 bg-[#0B0D11] p-6 text-center hover:border-amber-500">
+                <Upload className="h-9 w-9 text-amber-400" />
+                <span className="text-sm font-semibold text-white">Choose photos, paintings, or storyboard sketches</span>
+                <span className="text-xs text-gray-400">Select multiple JPG, PNG, WebP or GIF files. Maximum 8 MB per picture.</span>
                 <input
-                  type="text"
-                  required
-                  placeholder="e.g. Rainy Mood Board"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full bg-[#0B0D11] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                  autoFocus
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  onChange={(e) => { setChosenFiles(Array.from(e.target.files || [])); setUploadError(''); }}
                 />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300">Image / Asset URL</label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={newUrl}
-                  onChange={(e) => setNewUrl(e.target.value)}
-                  className="w-full bg-[#0B0D11] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300">Asset Type</label>
+              </label>
+              {chosenFiles.length > 0 && (
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-100">
+                  {chosenFiles.length} file(s) selected: {chosenFiles.slice(0, 3).map(f => f.name).join(', ')}{chosenFiles.length > 3 ? '…' : ''}
+                </div>
+              )}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-300">What is this artwork?</label>
                 <select
-                  value={newType}
-                  onChange={(e) => setNewType(e.target.value as 'image' | 'video' | 'sketch' | 'audio')}
-                  className="w-full bg-[#0B0D11] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                  value={newType === 'sketch' ? 'sketch' : 'image'}
+                  onChange={e => setNewType(e.target.value as 'image' | 'sketch')}
+                  className="w-full rounded-lg border border-white/10 bg-[#0B0D11] p-2 text-sm text-white"
                 >
-                  <option value="image">Visual Image Reference</option>
-                  <option value="video">Video Reference</option>
-                  <option value="sketch">Storyboard Sketch</option>
-                  <option value="audio">Audio / Sound Asset</option>
+                  <option value="image">Photo / reference image</option>
+                  <option value="sketch">Painting / hand-drawn storyboard</option>
                 </select>
               </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowUploadModal(false)}
-                  className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-semibold text-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition-colors shadow-lg"
-                >
-                  Save Asset
+              <label className="block space-y-1">
+                <span className="text-xs font-semibold text-gray-300">Title {chosenFiles.length > 1 ? '(filename used for multiple pictures)' : '(optional for files)'}</span>
+                <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} maxLength={120}
+                  placeholder="Lake scene, panel 3, character concept…" className="w-full rounded-lg border border-white/10 bg-[#0B0D11] p-2 text-sm text-white" />
+              </label>
+              {chosenFiles.length === 0 && (
+                <label className="block space-y-1">
+                  <span className="text-xs font-semibold text-gray-400">Or paste a public image URL</span>
+                  <input type="url" value={newUrl} onChange={e => setNewUrl(e.target.value)}
+                    placeholder="https://example.com/reference.jpg" className="w-full rounded-lg border border-white/10 bg-[#0B0D11] p-2 text-sm text-white" />
+                </label>
+              )}
+              <p className="text-xs leading-relaxed text-gray-400">Your files remain in this browser. Clearing website storage or changing devices can remove them. Download a full backup regularly.</p>
+              {uploadError && <p role="alert" className="text-xs text-red-300">{uploadError}</p>}
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setShowUploadModal(false)} className="rounded-lg bg-white/5 px-4 py-2 text-xs font-semibold text-gray-300">Cancel</button>
+                <button type="submit" disabled={uploading} className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-black disabled:opacity-50">
+                  {uploading ? 'Saving artwork…' : chosenFiles.length ? 'Save selected images' : 'Save image URL'}
                 </button>
               </div>
             </form>
