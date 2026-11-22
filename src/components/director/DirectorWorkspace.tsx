@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable react-hooks/set-state-in-effect -- Load unfinished drafts from browser storage when switching projects. */
+
 import React, { useEffect, useState } from 'react';
 import { Sparkles, Clapperboard, Music2, Save, Download, ChevronDown, ChevronUp, ArrowRight, Loader2 } from 'lucide-react';
 import { useStory } from '../../context/StoryContext';
@@ -154,7 +156,7 @@ export const DirectorWorkspace: React.FC = () => {
               </div>
             </>:<div className="flex h-full min-h-[360px] flex-col items-center justify-center text-center gap-4">
               <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-500/10"><Clapperboard className="h-9 w-9 text-amber-400"/></div>
-              <h2 className="text-xl font-semibold">Your director's desk is ready.</h2>
+              <h2 className="text-xl font-semibold">Your director&apos;s desk is ready.</h2>
               <p className="max-w-sm text-sm text-gray-400">Describe a story on the left, choose your creative depth, and generate a shootable storyboard with music cues and deliberate silence.</p>
               <span className="text-xs text-gray-500"><Save className="inline h-3 w-3 mr-1"/> Plans save on your device after generation.</span>
             </div>}

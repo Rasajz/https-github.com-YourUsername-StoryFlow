@@ -27,7 +27,6 @@ export const TopBar: React.FC = () => {
     setIsCommandPaletteOpen,
     focusMode,
     setFocusMode,
-    googleUser,
     setIsGoogleModalOpen,
     setIsProjectModalOpen
   } = useStory();

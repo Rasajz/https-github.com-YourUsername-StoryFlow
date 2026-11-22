@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable react-hooks/set-state-in-effect -- Restore an existing local-first workspace and reflect actual browser write success. */
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import {
