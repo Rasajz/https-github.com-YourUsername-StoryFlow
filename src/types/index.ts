@@ -1,4 +1,4 @@
-export type WorkspaceView = 'notes' | 'storyboard' | 'script' | 'media';
+export type WorkspaceView = 'notes' | 'storyboard' | 'script' | 'media' | 'director';
 
 export type NoteTag = 'All' | 'Ideas' | 'Characters' | 'Dialogue' | 'References' | 'Locations';
 
@@ -105,4 +105,16 @@ export interface ProjectItem {
   notesCount?: number;
   cardsCount?: number;
   scenesCount?: number;
+}
+
+export type DirectorMode = 'quick' | 'balanced' | 'deep';
+export interface DirectorShot {
+  number: number; title: string; shotSize: string; movement: string;
+  seconds: number; time: string; action: string; lighting: string;
+  sound: string; purpose: string; practical: string;
+}
+export interface DirectorMusic { range: string; heading: string; cue: string; note: string; silence: boolean; }
+export interface DirectorPlan {
+  title: string; logline: string; arc: string; upgrade: string;
+  musicPlan: DirectorMusic[]; shots: DirectorShot[];
 }

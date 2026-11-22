@@ -28,7 +28,9 @@ export const ScriptStudioWorkspace: React.FC = () => {
   const { 
     scriptScenes, 
     activeSceneId, 
-    setActiveSceneId, 
+    setActiveSceneId,
+    activeProjectId,
+    setActiveView, 
     addScriptScene, 
     updateScriptScene,
     reorderScriptScenes,
@@ -127,6 +129,45 @@ export const ScriptStudioWorkspace: React.FC = () => {
     const updatedShots = activeScene.shotIdeas.filter((_, idx) => idx !== indexToRemove);
     updateScriptScene(activeScene.id, { shotIdeas: updatedShots });
     showToast('Camera Shot Removed', `Removed "${removedShot || 'shot'}"`);
+  };
+
+  // Carry the scene's actual screenplay into AI Director, without losing an
+  // unfinished AI prompt already associated with this project.
+  const handlePlanShots = () => {
+    if (!activeScene) return;
+    const body = activeScene.blocks
+      .filter((block) => block.text.trim().length > 0)
+      .map((block) => {
+        switch (block.type) {
+          case 'character': return block.text.toUpperCase();
+          case 'heading': return block.text.toUpperCase();
+          case 'parenthetical': return '(' + block.text.replace(/^\(|\)$/g, '') + ')';
+          case 'transition': return block.text.toUpperCase();
+          default: return block.text;
+        }
+      }).join('\n\n');
+    if (body.trim().length < 20) {
+      showToast('More story needed', 'Write a few lines of action or dialogue before planning shots.');
+      return;
+    }
+    const sceneText = [activeScene.title, body].join('\n\n');
+    const clipped = sceneText.slice(0, 6000); // The API accepts at most 6000 characters.
+    const key = 'storyflow_director_draft_' + activeProjectId;
+    try {
+      const previous = window.localStorage.getItem(key);
+      if (previous?.trim() && previous.trim() !== clipped.trim()) {
+        const replaceDraft = window.confirm(
+          'AI Director already has an unfinished story for this project. Replace that draft with the selected screenplay scene? Your original script will not change.'
+        );
+        if (!replaceDraft) return;
+      }
+      window.localStorage.setItem(key, clipped);
+      setActiveView('director');
+      showToast('Scene sent to AI Director',
+        sceneText.length > 6000 ? 'The first 6,000 characters were transferred. Review the draft before generating.' : 'Your script is ready. Choose a mode and generate shots.');
+    } catch {
+      showToast('Could not transfer scene', 'Browser storage is unavailable. Copy the scene into AI Director manually.');
+    }
   };
 
   const handleExportFormattedScript = () => {
@@ -376,6 +417,19 @@ export const ScriptStudioWorkspace: React.FC = () => {
                 Dark
               </button>
             </div>
+
+            {/* One-click workflow: Script Studio → AI Director → Storyboard */}
+            <button
+              type="button"
+              onClick={handlePlanShots}
+              disabled={!activeScene}
+              title="Send this scene to AI Director to plan ten cinematic shots"
+              aria-label="Plan cinematic shots for the current scene"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-all shrink-0 disabled:opacity-40"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Plan Shots</span>
+            </button>
 
             {/* Export Screenplay Button */}
             <button
