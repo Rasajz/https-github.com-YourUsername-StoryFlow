@@ -38,6 +38,7 @@ export const TopBar: React.FC = () => {
       case 'storyboard': return 'Storyboard';
       case 'script': return 'Script Studio';
       case 'media': return 'Media Library';
+      case 'director': return 'AI Director';
     }
   };
 

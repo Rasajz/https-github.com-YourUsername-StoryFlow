@@ -175,14 +175,14 @@ export const Sidebar: React.FC = () => {
               type="button"
               key={item.id}
               onClick={() => setActiveView(item.id)}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
+              className={`min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all ${
                 isActive
                   ? 'text-amber-400 scale-105 font-bold'
                   : 'text-gray-400 hover:text-gray-200 font-medium'
               }`}
             >
               <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-amber-400' : 'text-gray-400'}`} />
-              <span className="text-[10px] whitespace-nowrap">{item.label}</span>
+              <span className="text-[9px] whitespace-nowrap">{item.id === 'script' ? 'Script' : item.id === 'media' ? 'Media' : item.id === 'director' ? 'AI' : item.label}</span>
             </button>
           );
         })}
@@ -191,7 +191,7 @@ export const Sidebar: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsProjectModalOpen(true)}
-          className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-400 hover:text-amber-400 transition-all"
+          className="min-w-0 flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl text-gray-400 hover:text-amber-400 transition-all"
         >
           <FolderKanban className="w-5 h-5 mb-0.5 text-amber-400/80" />
           <span className="text-[10px] text-amber-400/90 whitespace-nowrap">Projects</span>

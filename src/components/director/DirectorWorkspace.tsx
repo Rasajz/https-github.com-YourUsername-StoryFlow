@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sparkles, Clapperboard, Music2, Save, Download, ChevronDown, ChevronUp, ArrowRight, Loader2 } from 'lucide-react';
 import { useStory } from '../../context/StoryContext';
 import type { DirectorPlan, DirectorMode } from '../../types';
@@ -9,6 +9,16 @@ export const DirectorWorkspace: React.FC = () => {
   const { activeProjectId, projectName, directorPlans, saveDirectorPlan, addDirectorShotsToStoryboard } = useStory();
   const plan = directorPlans[activeProjectId];
   const [story, setStory] = useState('');
+  // Save even unfinished prompts immediately, separately for each project.
+  useEffect(() => {
+    try { setStory(window.localStorage.getItem('storyflow_director_draft_' + activeProjectId) || ''); }
+    catch { /* Browser storage may be unavailable. */ }
+  }, [activeProjectId]);
+  const updateDraft = (value: string) => {
+    setStory(value);
+    try { window.localStorage.setItem('storyflow_director_draft_' + activeProjectId, value); }
+    catch { setError('Could not save this draft. Copy it somewhere safe before closing.'); }
+  };
   const [level, setLevel] = useState<DirectorMode>('balanced');
   const [genre, setGenre] = useState('Drama');
   const [mood, setMood] = useState('Emotional');
@@ -48,7 +58,7 @@ export const DirectorWorkspace: React.FC = () => {
     link.click(); URL.revokeObjectURL(url);
   };
   const fillExample = () => {
-    setStory('A student sits beside a lake after a difficult day, holding a photograph of his mother. He wants to pursue filmmaking but feels guilty about leaving home. An unexpected phone call changes what he decides to do next.');
+    updateDraft('A student sits beside a lake after a difficult day, holding a photograph of his mother. He wants to pursue filmmaking but feels guilty about leaving home. An unexpected phone call changes what he decides to do next.');
     setGenre('Drama'); setMood('Hopeful'); setGear('Phone only');
     setOneLocation(true); setDuration(90);
   };
@@ -69,7 +79,7 @@ export const DirectorWorkspace: React.FC = () => {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(330px,1fr)]">
           <section className="rounded-2xl border border-white/10 bg-[#12151D] p-5 space-y-4">
             <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">Your story</h2><button onClick={fillExample} className="text-xs font-semibold text-amber-400 hover:underline">Use example</button></div>
-            <textarea aria-label="Your story" rows={8} className={control + ' resize-y leading-relaxed'} value={story} onChange={e=>setStory(e.target.value)} placeholder="What happens? Who wants what? What emotion should the audience feel?" maxLength={6000}/>
+            <textarea aria-label="Your story" rows={8} className={control + ' resize-y leading-relaxed'} value={story} onChange={e=>updateDraft(e.target.value)} placeholder="What happens? Who wants what? What emotion should the audience feel?" maxLength={6000}/>
             <div className="grid grid-cols-2 gap-3">
               <label className="text-xs text-gray-400 space-y-1">Genre
                 <select className={control} value={genre} onChange={e=>setGenre(e.target.value)}><option>Drama</option><option>Thriller</option><option>Romance</option><option>Comedy</option><option>Documentary</option><option>Experimental</option></select>
