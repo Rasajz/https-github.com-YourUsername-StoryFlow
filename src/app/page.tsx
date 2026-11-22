@@ -8,6 +8,7 @@ import { NotesWorkspace } from '../components/notes/NotesWorkspace';
 import { StoryboardCanvas } from '../components/storyboard/StoryboardCanvas';
 import { ScriptStudioWorkspace } from '../components/script/ScriptStudioWorkspace';
 import { MediaLibraryWorkspace } from '../components/media/MediaLibraryWorkspace';
+import { DirectorWorkspace } from '../components/director/DirectorWorkspace';
 
 export default function Home() {
   const { activeView } = useStory();
@@ -27,6 +28,7 @@ export default function Home() {
           {activeView === 'storyboard' && <StoryboardCanvas />}
           {activeView === 'script' && <ScriptStudioWorkspace />}
           {activeView === 'media' && <MediaLibraryWorkspace />}
+          {activeView === 'director' && <DirectorWorkspace />}
         </div>
       </main>
     </div>

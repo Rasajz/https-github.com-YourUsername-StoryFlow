@@ -37,6 +37,7 @@ export const Sidebar: React.FC = () => {
     { id: 'storyboard', label: 'Storyboard', icon: LayoutGrid },
     { id: 'script', label: 'Script Studio', icon: Film },
     { id: 'media', label: 'Media Library', icon: ImageIcon },
+    { id: 'director', label: 'AI Director', icon: Sparkles },
   ];
 
   return (

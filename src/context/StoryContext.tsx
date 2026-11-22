@@ -11,7 +11,8 @@ import {
   StoryNodeData,
   GoogleUser,
   ProjectItem,
-  StoryTimeline
+  StoryTimeline,
+  DirectorPlan
 } from '../types';
 import {
   INITIAL_NOTES,
@@ -96,6 +97,11 @@ interface StoryContextType {
   // Media Library
   mediaItems: MediaItem[];
   addMediaItem: (item: Partial<MediaItem>) => void;
+
+  // AI Director: generated plans belong to individual projects.
+  directorPlans: Record<string, DirectorPlan>;
+  saveDirectorPlan: (plan: DirectorPlan) => void;
+  addDirectorShotsToStoryboard: (plan: DirectorPlan) => void;
 
   // Google Account & Cloud Sync / Restore
   googleUser: GoogleUser | null;
@@ -193,6 +199,8 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   ]);
   const [activeTimelineId, setActiveTimelineId] = useState<string>('all');
 
+  const [directorPlans, setDirectorPlans] = useState<Record<string, DirectorPlan>>({});
+
   // Google Account & Cloud Sync state
   const [googleUser, setGoogleUser] = useState<GoogleUser | null>(null);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState<boolean>(false);
@@ -215,6 +223,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (typeof data.projectName === 'string') setProjectName(data.projectName);
           if (typeof data.activeProjectId === 'string') setActiveProjectId(data.activeProjectId);
           if (Array.isArray(data.projects)) setProjects(data.projects);
+          if (data.directorPlans && typeof data.directorPlans === 'object') setDirectorPlans(data.directorPlans);
           if (data.projectWorkspaces && typeof data.projectWorkspaces === 'object') setProjectWorkspaces(data.projectWorkspaces);
           if (Array.isArray(data.notes)) setNotes(data.notes);
           if (Array.isArray(data.nodes)) setNodes(data.nodes);
@@ -248,7 +257,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
       window.localStorage.setItem('storyflow_local_v2', JSON.stringify({
         version: 2, savedAt: new Date().toISOString(),
-        projectName, activeProjectId, projects, projectWorkspaces: completeWorkspaces,
+        projectName, activeProjectId, projects, projectWorkspaces: completeWorkspaces, directorPlans,
         notes, nodes, edges, scriptScenes, mediaItems, timelines,
         activeNoteId, activeSceneId, activeTimelineId, breadcrumbStack, subBoardStorage
       }));
@@ -258,7 +267,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSaveStatus('Save failed: browser storage may be full. Export your backup.');
       setIsSaving(false);
     }
-  }, [storageReady, projectName, activeProjectId, projects, projectWorkspaces,
+  }, [storageReady, projectName, activeProjectId, projects, projectWorkspaces, directorPlans,
       notes, nodes, edges, scriptScenes, mediaItems, timelines,
       activeNoteId, activeSceneId, activeTimelineId, breadcrumbStack, subBoardStorage]);
 
@@ -290,6 +299,37 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Local-first restore', 'Open Local Backups and import a JSON backup. Google Cloud is not connected.');
     setIsGoogleModalOpen(true);
     return false;
+  };
+
+  const saveDirectorPlan = (plan: DirectorPlan) => {
+    setDirectorPlans(prev => ({ ...prev, [activeProjectId]: plan }));
+    triggerAutosave();
+  };
+
+  const addDirectorShotsToStoryboard = (plan: DirectorPlan) => {
+    const batch = Date.now().toString();
+    const newNodes: Node[] = plan.shots.map((shot, index) => ({
+      id: 'director-' + batch + '-' + index,
+      type: 'sceneCard',
+      position: { x: 140 + (index % 2) * 370, y: 130 + Math.floor(index / 2) * 220 },
+      data: {
+        nodeType: 'scene',
+        title: 'Shot ' + String(shot.number).padStart(2, '0') + ': ' + shot.title,
+        description: shot.action + '\n' +
+          'Camera: ' + shot.shotSize + '; ' + shot.movement + '\n' +
+          'Lighting: ' + shot.lighting + '\n' +
+          'Sound: ' + shot.sound + '\n' +
+          'Director: ' + shot.practical,
+        statusBadge: shot.time,
+        accentColor: '#F59E0B',
+        timelineId: 'time-main'
+      }
+    }));
+    setNodes(prev => [...prev, ...newNodes]);
+    setActiveView('storyboard');
+    setSelectedNodeId(newNodes[0]?.id || null);
+    triggerAutosave();
+    showToast('10 shots imported', 'The AI plan was added to your Storyboard canvas.');
   };
 
   // Projects Actions - Full Isolation & Persistence per Project
@@ -808,6 +848,9 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         projects,
         activeProjectId,
+        directorPlans,
+        saveDirectorPlan,
+        addDirectorShotsToStoryboard,
         switchProject,
         createProject,
         renameCurrentProject,
