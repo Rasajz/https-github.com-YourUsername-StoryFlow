@@ -137,9 +137,9 @@ export const Sidebar: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <Cloud className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Cloud Backup & Restore</span>
+              <span>Local Backups & Recovery</span>
             </div>
-            <span className="w-2 h-2 rounded-full bg-emerald-400" title="Connected" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400" title="Stored on this device" />
           </button>
 
           {/* User Profile */}
@@ -153,11 +153,11 @@ export const Sidebar: React.FC = () => {
             </div>
             <div className="truncate flex-1">
               <span className="block text-xs font-semibold text-gray-200 truncate">
-                {googleUser ? googleUser.name : 'Storyflow Creator'}
+                {'Local Creator'}
               </span>
               <span className="block text-[10px] text-gray-500 truncate flex items-center gap-1">
                 <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 inline" />
-                {googleUser ? googleUser.email : 'creator.storyflow@gmail.com'}
+                {'Local browser workspace'}
               </span>
             </div>
           </button>

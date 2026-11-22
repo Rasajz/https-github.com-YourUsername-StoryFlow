@@ -136,7 +136,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [breadcrumbStack, setBreadcrumbStack] = useState<BreadcrumbStep[]>([
     { id: 'main', title: 'Main Story Map' }
   ]);
-  const [subBoardStorage] = useState(SUBBOARD_MAP);
+  const [subBoardStorage, setSubBoardStorage] = useState<Record<string, { nodes: Node[]; edges: Edge[] }>>(SUBBOARD_MAP as Record<string, { nodes: Node[]; edges: Edge[] }>);
 
   // Script Studio state
   const [scriptScenes, setScriptScenes] = useState<ScriptScene[]>(INITIAL_SCRIPT_SCENES);
@@ -194,12 +194,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeTimelineId, setActiveTimelineId] = useState<string>('all');
 
   // Google Account & Cloud Sync state
-  const [googleUser, setGoogleUser] = useState<GoogleUser | null>({
-    name: 'Storyflow Creator',
-    email: 'creator.storyflow@gmail.com',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
-    lastBackupTime: 'Just now'
-  });
+  const [googleUser, setGoogleUser] = useState<GoogleUser | null>(null);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState<boolean>(false);
 
   // System state
@@ -209,14 +204,68 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [focusMode, setFocusMode] = useState<boolean>(false);
 
+  // Local-first: hydrate once on the client, before any new state is written.
+  const [storageReady, setStorageReady] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem('storyflow_local_v2');
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data?.version === 2 && Array.isArray(data.projects) && Array.isArray(data.notes)) {
+          if (typeof data.projectName === 'string') setProjectName(data.projectName);
+          if (typeof data.activeProjectId === 'string') setActiveProjectId(data.activeProjectId);
+          if (Array.isArray(data.projects)) setProjects(data.projects);
+          if (data.projectWorkspaces && typeof data.projectWorkspaces === 'object') setProjectWorkspaces(data.projectWorkspaces);
+          if (Array.isArray(data.notes)) setNotes(data.notes);
+          if (Array.isArray(data.nodes)) setNodes(data.nodes);
+          if (Array.isArray(data.edges)) setEdges(data.edges);
+          if (Array.isArray(data.scriptScenes)) setScriptScenes(data.scriptScenes);
+          if (Array.isArray(data.mediaItems)) setMediaItems(data.mediaItems);
+          if (Array.isArray(data.timelines)) setTimelines(data.timelines);
+          if (typeof data.activeNoteId === 'string') setActiveNoteId(data.activeNoteId);
+          if (typeof data.activeSceneId === 'string') setActiveSceneId(data.activeSceneId);
+          if (typeof data.activeTimelineId === 'string') setActiveTimelineId(data.activeTimelineId);
+          if (Array.isArray(data.breadcrumbStack)) setBreadcrumbStack(data.breadcrumbStack);
+          if (data.subBoardStorage && typeof data.subBoardStorage === 'object') setSubBoardStorage(data.subBoardStorage);
+          setSaveStatus('Restored from this device');
+        }
+      }
+    } catch {
+      setSaveStatus('Could not read local save. Export a backup after editing.');
+    } finally {
+      setStorageReady(true);
+    }
+  }, []);
+
+  // Save all active project content after every edit. React effects run after changes,
+  // so refreshing the page restores notes, script blocks, storyboard and other projects.
+  useEffect(() => {
+    if (!storageReady) return;
+    try {
+      const completeWorkspaces = {
+        ...projectWorkspaces,
+        [activeProjectId]: { projectName, notes, nodes, edges, scriptScenes, mediaItems, timelines }
+      };
+      window.localStorage.setItem('storyflow_local_v2', JSON.stringify({
+        version: 2, savedAt: new Date().toISOString(),
+        projectName, activeProjectId, projects, projectWorkspaces: completeWorkspaces,
+        notes, nodes, edges, scriptScenes, mediaItems, timelines,
+        activeNoteId, activeSceneId, activeTimelineId, breadcrumbStack, subBoardStorage
+      }));
+      setSaveStatus('Saved on this device');
+      setIsSaving(false);
+    } catch {
+      setSaveStatus('Save failed: browser storage may be full. Export your backup.');
+      setIsSaving(false);
+    }
+  }, [storageReady, projectName, activeProjectId, projects, projectWorkspaces,
+      notes, nodes, edges, scriptScenes, mediaItems, timelines,
+      activeNoteId, activeSceneId, activeTimelineId, breadcrumbStack, subBoardStorage]);
+
   // Autosave notification effect
   const triggerAutosave = () => {
-    setIsSaving(true);
-    setSaveStatus('Saving...');
-    setTimeout(() => {
-      setIsSaving(false);
-      setSaveStatus('Saved');
-    }, 400);
+    // The storage effect, not this indicator, confirms persistence.
+    setSaveStatus('Unsaved changes');
   };
 
   const showToast = (title: string, message: string) => {
@@ -227,92 +276,20 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 3500);
   };
 
-  const loginWithGoogle = (email: string, name?: string) => {
-    const user: GoogleUser = {
-      name: name || email.split('@')[0] || 'Story Creator',
-      email,
-      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(email)}`,
-      lastBackupTime: 'Just now'
-    };
-    setGoogleUser(user);
-    showToast('Signed in with Google', `Connected to ${email}`);
-
-    // Attempt auto-restore if account has existing backup
-    try {
-      const savedBackup = localStorage.getItem(`storyflow_backup_${email}`);
-      if (savedBackup) {
-        const parsed = JSON.parse(savedBackup);
-        if (parsed.notes) setNotes(parsed.notes);
-        if (parsed.nodes) setNodes(parsed.nodes);
-        if (parsed.edges) setEdges(parsed.edges);
-        if (parsed.scriptScenes) setScriptScenes(parsed.scriptScenes);
-        if (parsed.mediaItems) setMediaItems(parsed.mediaItems);
-        if (parsed.projectName) setProjectName(parsed.projectName);
-        showToast('Backup Restored', `Restored your saved projects for ${email}`);
-      }
-    } catch {
-      // Ignored
-    }
+  // Real Google authentication is deliberately unavailable until an auth provider is configured.
+  // Never treat an arbitrary email address as proof of identity.
+  const loginWithGoogle = (_email: string, _name?: string) => {
+    showToast('Sign-in not configured', 'Use local backups now. Verified Google sign-in requires an auth provider.');
   };
-
-  const logoutGoogle = () => {
-    setGoogleUser(null);
-    showToast('Signed Out', 'You have been disconnected from Google sync');
-  };
-
+  const logoutGoogle = () => { setGoogleUser(null); };
   const backupToGoogle = () => {
-    if (!googleUser) {
-      showToast('Sign In Required', 'Please sign in with your Gmail account to sync');
-      setIsGoogleModalOpen(true);
-      return;
-    }
-    const backupData = {
-      projectName,
-      notes,
-      nodes,
-      edges,
-      scriptScenes,
-      mediaItems,
-      backupDate: new Date().toISOString(),
-      email: googleUser.email
-    };
-    try {
-      localStorage.setItem(`storyflow_backup_${googleUser.email}`, JSON.stringify(backupData));
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setGoogleUser((prev) => prev ? { ...prev, lastBackupTime: timeStr } : null);
-      showToast('Cloud Backup Successful', `Saved all notes, boards, scenes & media to ${googleUser.email}`);
-    } catch {
-      showToast('Backup Error', 'Could not save to local storage');
-    }
+    showToast('Local-first backup', 'Open Local Backups to download your data. Google Cloud is not connected.');
+    setIsGoogleModalOpen(true);
   };
-
-  const restoreFromGoogle = (customEmail?: string): boolean => {
-    const targetEmail = customEmail || googleUser?.email;
-    if (!targetEmail) {
-      showToast('Sign In Required', 'Please sign in with your Gmail to restore your work');
-      setIsGoogleModalOpen(true);
-      return false;
-    }
-    try {
-      const savedBackup = localStorage.getItem(`storyflow_backup_${targetEmail}`);
-      if (savedBackup) {
-        const parsed = JSON.parse(savedBackup);
-        if (parsed.notes) setNotes(parsed.notes);
-        if (parsed.nodes) setNodes(parsed.nodes);
-        if (parsed.edges) setEdges(parsed.edges);
-        if (parsed.scriptScenes) setScriptScenes(parsed.scriptScenes);
-        if (parsed.mediaItems) setMediaItems(parsed.mediaItems);
-        if (parsed.projectName) setProjectName(parsed.projectName);
-        showToast('Restored from Gmail', `Loaded all storyboards, scripts, notes & media for ${targetEmail}`);
-        return true;
-      } else {
-        showToast('No Cloud Backup Found', `No previous backup found for ${targetEmail}. Current data preserved.`);
-        return false;
-      }
-    } catch {
-      showToast('Restore Failed', 'Could not read backup data');
-      return false;
-    }
+  const restoreFromGoogle = (_email?: string): boolean => {
+    showToast('Local-first restore', 'Open Local Backups and import a JSON backup. Google Cloud is not connected.');
+    setIsGoogleModalOpen(true);
+    return false;
   };
 
   // Projects Actions - Full Isolation & Persistence per Project
@@ -692,9 +669,8 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const drillDownSubBoard = (subBoardId: string, title: string) => {
     // Save current nodes and edges into subBoardStorage if we are on main
     const currentStackTop = breadcrumbStack[breadcrumbStack.length - 1];
-    if (currentStackTop.id === 'main') {
-      // do nothing special, subboard storage has defaults
-    }
+    // Preserve the current canvas before entering a nested board.
+    setSubBoardStorage((prev) => ({ ...prev, [currentStackTop.id]: { nodes, edges } }));
 
     setBreadcrumbStack((prev) => [...prev, { id: subBoardId, title }]);
 
@@ -726,12 +702,14 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const navigateBreadcrumb = (index: number) => {
     if (index >= breadcrumbStack.length) return;
     const targetStep = breadcrumbStack[index];
+    const currentStep = breadcrumbStack[breadcrumbStack.length - 1];
+    setSubBoardStorage((prev) => ({ ...prev, [currentStep.id]: { nodes, edges } }));
     const newStack = breadcrumbStack.slice(0, index + 1);
     setBreadcrumbStack(newStack);
 
     if (targetStep.id === 'main') {
-      setNodes(INITIAL_STORYBOARD_NODES as unknown as Node[]);
-      setEdges(INITIAL_STORYBOARD_EDGES as unknown as Edge[]);
+      setNodes(subBoardStorage.main?.nodes || (INITIAL_STORYBOARD_NODES as unknown as Node[]));
+      setEdges(subBoardStorage.main?.edges || (INITIAL_STORYBOARD_EDGES as unknown as Edge[]));
     } else {
       const targetSubBoard = subBoardStorage[targetStep.id];
       if (targetSubBoard) {

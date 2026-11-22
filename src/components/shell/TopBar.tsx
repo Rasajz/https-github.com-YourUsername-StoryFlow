@@ -126,11 +126,11 @@ export const TopBar: React.FC = () => {
           type="button"
           onClick={() => setIsGoogleModalOpen(true)}
           className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-gray-300 transition-all group"
-          title={googleUser ? `Synced with ${googleUser.email}` : 'Sign in with Gmail to restore/backup'}
+          title={'Download or restore a local backup'}
         >
           <Cloud className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
           <span className="text-[11px] font-medium hidden md:inline">
-            {googleUser ? 'Google Sync' : 'Gmail Backup'}
+            {'Local Backups'}
           </span>
         </button>
 
